@@ -1,0 +1,138 @@
+"""How wind, weather and severity evolve over time."""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import components as comp
+import schema
+import theme
+
+df = comp.preparar_hoja(dict(page_title="Time series | OSI Analysis Desk", layout="wide"),
+                        clave="series")
+
+comp.encabezado_pagina(
+    "Time series",
+    "Each weather field and each severity component through the window, either as a regional "
+    "mean or county by county. This is the page to check before trusting any aggregate: a "
+    "regional mean can look calm while a handful of counties carry the entire event.",
+)
+comp.banner_datos_simulados()
+
+st.markdown(f"""
+<div class="finding tone-ink">
+  <div class="flabel">What OSI actually is</div>
+  <p>
+  <b>OSI (Outage Severity Index)</b> is one number per county per hour, from 0 to about 0.65,
+  that summarizes how bad an outage is right then. 0 means essentially no one is without power;
+  higher means worse. It isn't measured directly, it's built from four ingredients, each one a
+  different angle on "how bad is it":<br><br>
+  <b>P_t</b>, the share of customers currently without power: the plain headline number.<br>
+  <b>N_t</b>, how fast <i>new</i> customers are losing power right now: a county that's stable at
+  30% out is very different from one that just jumped from 5% to 30% this hour.<br>
+  <b>D_t</b>, persistence over the last 6 hours: a brief blip recovers fast, while a sustained
+  outage means crews are still working on it.<br>
+  <b>R_t</b>, how much restoration is happening: power actively coming back, which should pull
+  severity down.<br><br>
+  These combine with the challenge's official formula:
+  <code>OSI = 0.40*P_t + 0.35*N_t + 0.25*D_t - 0.10*R_t</code>. P_t and N_t carry the most weight
+  because "how many are out" and "how fast it's getting worse" are the two most direct signals of
+  severity; R_t is subtracted because active restoration is the one ingredient that makes things
+  better, not worse.
+  </p>
+</div>
+""", unsafe_allow_html=True)
+
+variables_disponibles = [v for v in theme.ETIQUETAS_VARIABLE if v in df.columns]
+col_izq, col_der = st.columns([1, 1.4])
+with col_izq:
+    variable = st.selectbox(
+        "Variable", variables_disponibles,
+        format_func=lambda v: f"{v} ({theme.ETIQUETAS_VARIABLE.get(v, v)})",
+        index=variables_disponibles.index("osi") if "osi" in variables_disponibles else 0,
+    )
+with col_der:
+    condados = ["Average of all counties"] + sorted(df["countyName"].unique().tolist())
+    seleccion = st.multiselect("County (optional, to compare)", condados,
+                               default=["Average of all counties"])
+
+fig = go.Figure()
+color_base = theme.COLOR_POR_VARIABLE.get(variable, theme.INK)
+
+if "Average of all counties" in seleccion or not seleccion:
+    serie = df.groupby("hour_idx")[variable].mean()
+    fig.add_trace(go.Scatter(x=serie.index, y=serie.values, mode="lines",
+                              line=dict(color=color_base, width=2.4), name="average"))
+
+otros = [s for s in seleccion if s != "Average of all counties"]
+paleta_extra = [theme.ACCENT, theme.OK, theme.WARN, theme.MUTED, theme.INK]
+for i, nombre in enumerate(otros):
+    sub = df[df["countyName"] == nombre].sort_values("hour_idx")
+    fig.add_trace(go.Scatter(x=sub["hour_idx"], y=sub[variable], mode="lines",
+                              line=dict(color=paleta_extra[i % len(paleta_extra)], width=1.6), name=nombre))
+
+if "in_event_window" in df.columns:
+    inicio_evento = df.loc[df["in_event_window"], "hour_idx"].min()
+    if pd.notna(inicio_evento):
+        fig.add_vrect(x0=inicio_evento, x1=df["hour_idx"].max(), fillcolor=theme.ACCENT, opacity=0.06, line_width=0)
+
+fig.add_vline(x=schema.ANCLA_H, line_dash="dash", line_color=theme.WARN, line_width=1.3,
+              annotation_text="prediction anchor", annotation_font_size=11)
+theme.aplicar_tema(fig, altura=440)
+fig.update_xaxes(title_text="hour since the start of the window")
+fig.update_yaxes(title_text=theme.ETIQUETAS_VARIABLE.get(variable, variable))
+comp.figura(fig, "1",
+            f"{theme.ETIQUETAS_VARIABLE.get(variable, variable)} through the event window",
+            fuente="<b>Source:</b> URMA 2.5 km for wind and temperature, ERA5 ~31 km for "
+                   "atmospheric context, as specified by the challenge. Values shown are the "
+                   "county selection made above.")
+
+st.markdown(f"""
+<div class="finding tone-warn">
+  <div class="flabel">What the dashed line means (and what it doesn't)</div>
+  <p>
+  Hour {schema.ANCLA_H} is the "prediction anchor": in the real challenge, that's the last hour a
+  forecasting model is allowed to treat as known history. Everything after it is what the model
+  has to guess, using only the weather forecast (which is legitimate to know in advance) and
+  nothing about how the outage itself actually unfolds.<br><br>
+  That line does <b>not</b> mean this file's data stops there. This page is showing the full
+  recorded history, hour 0 through {int(df["hour_idx"].max())}, on both sides of the anchor, the
+  same way the real <code>DM_Train.csv</code> does: it's the ground truth used afterward to check
+  whether a model's forecast was right, not a live feed that goes dark past hour {schema.ANCLA_H}.
+  If you upload that real file here, you'll see real OSI continuing all the way to the end of the
+  window, exactly like the simulated data does.
+  </p>
+</div>
+""", unsafe_allow_html=True)
+
+comp.titulo_seccion("01", "The four components of OSI, together")
+st.write(
+    "P_t is how many people are still without power, N_t is how fast it's getting worse, D_t is "
+    "the persistence of the last 6 hours, and R_t is how much restoration is happening. OSI "
+    "combines the four with the challenge's official formula: 0.40*P + 0.35*N + 0.25*D - 0.10*R."
+)
+fig2 = go.Figure()
+for var in ["P_t", "N_t", "D_t", "R_t"]:
+    if var in df.columns:
+        serie = df.groupby("hour_idx")[var].mean()
+        fig2.add_trace(go.Scatter(x=serie.index, y=serie.values, mode="lines",
+                                   name=theme.ETIQUETAS_VARIABLE.get(var, var),
+                                   line=dict(color=theme.COLOR_POR_VARIABLE.get(var), width=2)))
+fig2.add_vline(x=schema.ANCLA_H, line_dash="dash", line_color=theme.WARN, line_width=1.2)
+theme.aplicar_tema(fig2, altura=380)
+comp.figura(fig2, "2", "The four OSI components, averaged across counties",
+            fuente="<b>Components:</b> P_t level, N_t new failures, D_t 6-hour persistence, "
+                   "R_t restoration. <b>Note:</b> R_t enters the index with a negative "
+                   "weight, so an active restoration period lowers severity.")
+
+comp.pie_de_hoja(
+    "To see the same storm in space, not just in time, go to the \"Storm map\" page."
+)
+
+comp.ver_tambien(["map", "dist", "hyst"])
+comp.pie_sitio()
