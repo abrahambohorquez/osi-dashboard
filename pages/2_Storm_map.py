@@ -1,8 +1,7 @@
-"""The storm map: real US counties and the 3D relief, both auto-playing
-with rain falling on them, plus a synced hour explorer. Formerly split
-across two pages (Storm map / Cinematic view); merged into one once both
-pieces worked equally well, so there's a single best version instead of
-two near-duplicates."""
+"""The storm map: real US counties and the 3D relief, both auto-playing,
+plus a synced hour explorer. Formerly split across two pages (Storm map /
+Cinematic view); merged into one once both pieces worked equally well, so
+there's a single best version instead of two near-duplicates."""
 from __future__ import annotations
 
 import sys
@@ -89,7 +88,7 @@ else:
     if fig_geo is not None:
         comp.marco_figura("1", f"{theme.ETIQUETAS_VARIABLE.get(variable_mapa, variable_mapa)} "
                                "by county, animated through the window")
-        comp.figura_autoreproducida(fig_geo, altura=760, duracion_ms=160, lluvia=True)
+        comp.figura_autoreproducida(fig_geo, altura=760, duracion_ms=160)
         comp.nota_fuente(
             "<b>Boundaries:</b> US Census TIGER/Line county polygons, cached locally. "
             "<b>Fill scale:</b> the same five-category ramp as the severity ribbon; an orange "
@@ -111,7 +110,7 @@ if fig_anim is None:
     st.info("Not enough distinct hours to animate at this frame step.")
 else:
     comp.marco_figura("2", "The same field as a relief surface, camera orbiting")
-    comp.figura_autoreproducida(fig_anim, altura=760, duracion_ms=140, lluvia=True)
+    comp.figura_autoreproducida(fig_anim, altura=760, duracion_ms=140)
     comp.nota_fuente(
         "<b>Height and fill:</b> both encode the selected variable, deliberately, so the "
         "legend reads once for both maps. The wave call-outs below are located automatically "

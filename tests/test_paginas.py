@@ -42,10 +42,6 @@ TIEMPO_LIMITE = 120  # el mapa animado y el clustering tardan
 
 def _correr(hoja: Path, estado: dict | None = None) -> AppTest:
     at = AppTest.from_file(str(hoja), default_timeout=TIEMPO_LIMITE)
-    # Patterns arranca su propio bucle de reproduccion (st.rerun() en cada
-    # tick): sin esto, AppTest nunca ve un run terminado y se queda
-    # esperando hasta el timeout en vez de pasar en segundos.
-    at.session_state["pt_reproduciendo"] = False
     if estado:
         for clave, valor in estado.items():
             at.session_state[clave] = valor

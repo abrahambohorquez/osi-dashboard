@@ -241,35 +241,51 @@ def figura_ridgeline_fase(df: pd.DataFrame, variable: str = "osi", n_fases: int 
     return fig
 
 
-def figura_burbujas_una_hora(df: pd.DataFrame, hora: float, paso_horas: int = 3):
-    """One static frame of the Gapminder-style bubble view (gust vs.
-    OSI, bubble size is customers tracked, color is state), for a
-    server-driven autoplay loop: the page re-renders this every tick
-    with the next hour, so the cloud of bubbles swells and moves on its
-    own, no play button required. Axis ranges are fixed across the
-    whole event so bubbles move within a stable frame instead of the
-    axes jumping every tick."""
+def figura_burbujas_animada(df: pd.DataFrame, paso_horas: int = 3) -> go.Figure | None:
+    """The Gapminder-style bubble view (gust vs. OSI, bubble size is
+    customers tracked, color is state), as one figure with a frame per
+    hour built in, not a page that re-renders itself every tick.
+
+    An earlier version drove this with `st.session_state` + `st.rerun()`
+    on a timer: because `st.rerun()` re-executes the *entire* page, every
+    tick also rebuilt the parallel coordinates, the hierarchical
+    clustering (a real scipy linkage, not cheap) and the Sankey below it,
+    whether or not they had changed. That's what made the page feel slow
+    and made it hard to follow: four charts redrawing on every tick, not
+    just the one that was supposed to be animating. `px.scatter`'s own
+    `animation_frame` builds every hour as a Plotly frame up front, same
+    as the storm map's relief and county map, so the browser advances the
+    animation with no round trip to the server at all."""
     necesarias = {"gust", "osi", "customersTracked", "stateAbbr", "hour_idx"}
     if not necesarias.issubset(df.columns):
         return None
     horas = np.sort(df["hour_idx"].unique())[::max(1, paso_horas)]
     if len(horas) < 2:
         return None
-    hora_usada = horas[np.argmin(np.abs(horas - hora))]
-    corte = df[df["hour_idx"] == hora_usada]
-    if corte.empty:
-        return None
+    recorte = df[df["hour_idx"].isin(horas)].copy()
+    recorte["hour_idx"] = recorte["hour_idx"].astype(int)
     tope_gust = float(df["gust"].quantile(0.995)) or 1.0
     tope_osi = float(df["osi"].quantile(0.995)) or 1e-6
 
     fig = px.scatter(
-        corte, x="gust", y="osi", size="customersTracked", color="stateAbbr",
-        hover_name="countyName", range_x=[0, tope_gust * 1.05], range_y=[-tope_osi * 0.05, tope_osi * 1.15],
+        recorte, x="gust", y="osi", size="customersTracked", color="stateAbbr",
+        hover_name="countyName", animation_frame="hour_idx",
+        range_x=[0, tope_gust * 1.05], range_y=[-tope_osi * 0.05, tope_osi * 1.15],
         size_max=42,
     )
     fig.update_traces(marker=dict(line=dict(color="white", width=0.6), opacity=0.82))
-    theme.aplicar_tema(fig, titulo=f"Gust vs. OSI, hour {int(hora_usada)}, bubble size is customers tracked",
-                       altura=480)
-    fig.update_xaxes(title_text=theme.ETIQUETAS_VARIABLE.get("gust", "gust"))
-    fig.update_yaxes(title_text="OSI")
-    return fig, hora_usada, horas
+    p = theme.paleta()
+    fig.update_layout(
+        paper_bgcolor=p["panel"], plot_bgcolor=p["panel"],
+        font=dict(family=theme.FONT_BODY, color=p["ink"], size=13), height=480,
+        margin=dict(l=56, r=24, t=40, b=48),
+        legend=dict(bgcolor=p["panel"], bordercolor=p["border"], borderwidth=1),
+    )
+    eje = dict(gridcolor=p["grid"], zerolinecolor=p["border"], showline=True, linecolor=p["border"],
+               tickfont=dict(color=p["muted"], size=11))
+    fig.update_xaxes(title_text=theme.ETIQUETAS_VARIABLE.get("gust", "gust"), **eje)
+    fig.update_yaxes(title_text="OSI", **eje)
+    for frame in fig.frames:
+        frame.layout = dict(xaxis=dict(range=[0, tope_gust * 1.05]),
+                            yaxis=dict(range=[-tope_osi * 0.05, tope_osi * 1.15]))
+    return fig

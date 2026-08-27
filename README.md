@@ -228,38 +228,36 @@ line with no gap or overlap; that the old `calm`/`watch`/`warning`/`severe`
 vocabulary still resolves; that no agency logo or domain is embedded; and
 that nothing requires a map token or ships challenge data in the repo.
 
-The Patterns page drives its own rerun loop, so force
-`at.session_state["pt_reproduciendo"] = False` before running it if you
-add a test that interacts with its widgets.
+## Autoplay instead of a play button (and no page drives a server-side rerun loop anymore)
 
-## Autoplay instead of a play button (and why it isn't used on Storm map anymore)
+Both Storm map's relief and Patterns's county-cloud bubble chart used to
+drive their own animation with `st.session_state` + `st.rerun()`: each
+render advanced the current hour, slept briefly, and called `st.rerun()`,
+so the chart started playing on page load with no click needed. That
+caused real, measurable problems: `st.rerun()` re-executes the *entire*
+page, not just the section that changed, so on Storm map the real US
+county map's own client-side animation got resent and reset on every
+tick too (roughly 8 times a second), and on Patterns the parallel
+coordinates, the hierarchical clustering (a real scipy linkage, not
+cheap to recompute) and the Sankey below the bubble chart were all
+rebuilt on every ~0.45s tick whether or not they had changed, which is
+what made the page feel slow and made it hard to tell which chart was
+actually the one animating. As long as anything on a page calls
+`st.rerun()` in a loop, nothing else client-side on that page can stay
+visually stable.
 
-The Patterns bubble view drives its own loop: `st.session_state` holds
-the current hour, each render advances it, sleeps briefly, and calls
-`st.rerun()`, so it starts running on page load with no click needed.
-A Pause button flips a flag that breaks the loop. Because this makes
-the script call `st.rerun()` forever while playing, testing it with
-`AppTest` needs the autoplay flag forced to `False` first
-(`pt_reproduciendo`), otherwise the test run never returns.
-
-The storm map used to work the same way (`sm_reproduciendo`,
-`figura_relieve_una_hora` rendering one frame at a time), but that
-caused real flicker: `st.rerun()` re-executes the *entire* page, not
-just the section that changed, so the real US county map's own
-client-side animation (a separate chart on the same page) got resent
-and reset on every tick too, roughly 8 times a second. As long as
-anything on a page calls `st.rerun()` in a loop, nothing else client-side
-on that page can stay visually stable. The fix was to drop the
-server-driven loop entirely: the relief now uses `figura_tormenta_3d`,
-which has its own Plotly frames and play/pause, same as the county map,
-and the page has no `st.rerun()` at all. The tradeoff is that the two
-maps no longer share one clock or one Pause button, they each run on
-their own timeline, since that's what having no server loop requires.
-`figura_relieve_una_hora` (the single-frame, session-state-driven
-version) is still in `viz.py`, unused, in case a future page wants a
-frame driven by something other than its own animation, but don't use
-it alongside another chart on the same page unless that page truly has
-no other client-side animation to disturb.
+The fix, applied to both: drop the server-driven loop entirely and build
+every frame into the figure itself. Storm map's relief uses
+`figura_tormenta_3d`; Patterns's bubble chart uses
+`figura_burbujas_animada` (`px.scatter(..., animation_frame="hour_idx")`,
+the same approach Plotly's own Gapminder example uses). Both have their
+own Plotly frames and play/pause, same as the county map, and neither
+page calls `st.rerun()` at all anymore. The tradeoff is that charts on
+the same page no longer share one clock or one Pause button, they each
+run on their own timeline, since that's what having no server loop
+requires. `figura_relieve_una_hora` (the single-frame, session-state-driven
+version) is still in `viz.py`, unused, kept only as reference for how the
+old approach worked.
 
 That fixed the flicker, but Plotly still never starts an animation on
 its own: `st.plotly_chart` draws the frames and waits for someone to

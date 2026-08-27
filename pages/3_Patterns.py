@@ -3,10 +3,8 @@ counties at once, instead of one variable or one county at a time."""
 from __future__ import annotations
 
 import sys
-import time
 from pathlib import Path
 
-import numpy as np
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -29,35 +27,18 @@ comp.banner_datos_simulados()
 comp.titulo_seccion("01", "County cloud in motion")
 comp.entradilla(
     "Gust against severity, one marker per county, sized by customers tracked and colored by "
-    "state. The animation runs unattended. What a single county's line chart cannot show is the "
-    "shape of the whole cloud: whether the region moves together or splits, and whether the "
-    "gust-to-severity relationship holds at the same slope throughout the window."
+    "state, one frame per hour. What a single county's line chart cannot show is the shape of "
+    "the whole cloud: whether the region moves together or splits, and whether the "
+    "gust-to-severity relationship holds at the same slope throughout the window. Starts on its "
+    "own; use the pause button on the chart to hold a frame."
 )
 
-if "pt_reproduciendo" not in st.session_state:
-    st.session_state.pt_reproduciendo = True
-if "pt_hora_actual" not in st.session_state:
-    st.session_state.pt_hora_actual = float(df["hour_idx"].min())
-
-if st.button("Pause" if st.session_state.pt_reproduciendo else "Play", key="pt_boton"):
-    st.session_state.pt_reproduciendo = not st.session_state.pt_reproduciendo
-    st.rerun()
-
-siguiente_hora = None  # lo fija el bloque de la animacion, si esta activa
-resultado_burbujas = vp.figura_burbujas_una_hora(df, hora=st.session_state.pt_hora_actual, paso_horas=3)
-if resultado_burbujas is not None:
-    fig_burbujas, hora_usada, horas_disponibles = resultado_burbujas
-    comp.figura(fig_burbujas, "1", "Gust against severity, by county, through the window",
-                fuente="<b>Source:</b> active file. <b>Marker size:</b> customersTracked. "
-                       "<b>Color:</b> state.")
-    # El avance del reloj NO se hace aqui. `st.rerun()` aborta el resto del
-    # script, asi que mientras la animacion corria, las secciones 02, 03 y 04
-    # de esta pagina no llegaban a dibujarse nunca: solo aparecian al pulsar
-    # Pause. Se guarda el siguiente fotograma y el salto se ejecuta al final
-    # del archivo, cuando ya se ha renderizado la pagina entera.
-    idx_actual = int(np.argmin(np.abs(horas_disponibles - hora_usada)))
-    idx_siguiente = (idx_actual + 1) % len(horas_disponibles)
-    siguiente_hora = float(horas_disponibles[idx_siguiente])
+fig_burbujas = vp.figura_burbujas_animada(df, paso_horas=3)
+if fig_burbujas is not None:
+    comp.marco_figura("1", "Gust against severity, by county, through the window")
+    comp.figura_autoreproducida(fig_burbujas, altura=480, duracion_ms=450)
+    comp.nota_fuente("<b>Source:</b> active file. <b>Marker size:</b> customersTracked. "
+                     "<b>Color:</b> state.")
 else:
     st.info("This file is missing one of gust, osi, customersTracked or stateAbbr.")
 
@@ -135,16 +116,3 @@ comp.pie_de_hoja(
 
 comp.ver_tambien(["map", "corr", "hyst"])
 comp.pie_sitio()
-
-# ---------------------------------------------------------------------
-# El reloj de la animacion, al final a proposito.
-#
-# `st.rerun()` interrumpe el script en el punto donde se llama, asi que
-# ponerlo junto al grafico de burbujas dejaba el resto de la pagina sin
-# dibujar mientras la animacion corria. Aqui abajo la pagina ya esta
-# entera y el salto solo adelanta el fotograma.
-# ---------------------------------------------------------------------
-if st.session_state.pt_reproduciendo and siguiente_hora is not None:
-    st.session_state.pt_hora_actual = siguiente_hora
-    time.sleep(0.45)
-    st.rerun()

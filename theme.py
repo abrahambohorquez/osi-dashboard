@@ -353,7 +353,9 @@ html, body, [class*="css"] {{ font-family: {FONT_BODY}; }}
 
 h1, h2, h3, h4 {{ font-family: {FONT_DISPLAY}; color: {p['ink']}; }}
 p, li, span, label, div {{ color: {p['ink_soft']}; }}
-[data-testid="stMarkdownContainer"] p {{ color: {p['ink_soft']}; font-size: 15px; line-height: 1.7; }}
+[data-testid="stMarkdownContainer"] p {{
+    color: {p['ink_soft']}; font-size: 15px; line-height: 1.7; text-align: justify;
+}}
 [data-testid="stMetricValue"] {{ font-family: {FONT_DISPLAY}; color: {p['ink']}; }}
 
 /* Cifras siempre tabulares. Una columna de numeros que baila de ancho es
@@ -477,18 +479,22 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 .breadcrumb .sep {{ color: {p['border']} !important; padding: 0 6px; }}
 .breadcrumb .actual {{ color: {p['ink']} !important; font-weight: 600; }}
 
-.page-head {{ margin-bottom: var(--bloque); }}
+/* Titular centrado, cuerpo justificado: los encabezados se leen como
+   portada (una linea, centrada, mas grande), la prosa se lee como
+   columna de informe (justificada, con los dos margenes parejos), en
+   vez de todo pegado al mismo borde izquierdo como una app. */
+.page-head {{ margin-bottom: var(--bloque); text-align: center; }}
 .page-head .kicker {{
     font-family: {FONT_BODY}; font-weight: 800; font-size: 10.5px; letter-spacing: 2.2px;
     text-transform: uppercase; color: {p['accent']} !important; margin-bottom: 7px;
 }}
 .page-head h1 {{
-    margin: 0 0 12px; font-size: 30px; line-height: 1.18; color: {p['ink']};
-    font-weight: 800; letter-spacing: -.3px; max-width: 24ch;
+    margin: 0 auto 14px; font-size: 36px; line-height: 1.2; color: {p['ink']};
+    font-weight: 800; letter-spacing: -.3px; max-width: 26ch;
 }}
 .page-head .lede {{
     color: {p['ink_soft']} !important; font-size: 16px; max-width: 66ch;
-    margin: 0; line-height: 1.68;
+    margin: 0 auto; line-height: 1.68; text-align: justify;
 }}
 /* Metadatos de la pagina: que archivo, cuantas filas, cuando se calculo.
    Reglas arriba y abajo, monoespaciada, minuscula. */
@@ -685,27 +691,28 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
    6. TEXTO Y APARTADOS
    ================================================================== */
 .section-head {{
-    display: flex; align-items: baseline; gap: 12px; margin: var(--apartado) 0 12px;
+    display: flex; align-items: baseline; justify-content: center; gap: 12px;
+    margin: var(--apartado) 0 12px; text-align: center;
 }}
 .section-head .snum {{
     font-family: {FONT_MONO}; font-weight: 600; font-size: 12px; color: {p['accent']} !important;
     letter-spacing: .5px; flex-shrink: 0;
 }}
 .section-head h3 {{
-    font-family: {FONT_DISPLAY}; font-weight: 800; font-size: 18px; color: {p['ink']};
+    font-family: {FONT_DISPLAY}; font-weight: 800; font-size: 20px; color: {p['ink']};
     margin: 0; letter-spacing: -.1px;
 }}
 
 /* Entradilla de apartado, al modo de iii.org: el parrafo que explica que
    muestra el grafico y de donde sale el numero va ANTES del grafico, no
-   como pie de foto despues. */
+   como pie de foto despues. Centrada como bloque, justificada por dentro. */
 .standfirst {{
     font-size: 15px; line-height: 1.72; color: {p['ink_soft']} !important;
-    max-width: 74ch; margin: 0 0 var(--bloque);
+    max-width: 74ch; margin: 0 auto var(--bloque); text-align: justify;
 }}
 .standfirst b {{ color: {p['ink']} !important; }}
 
-.finding {{ margin: 0 0 var(--bloque); max-width: 74ch; }}
+.finding {{ margin: 0 auto var(--bloque); max-width: 74ch; text-align: justify; }}
 .finding .flabel {{
     display: inline; font-family: {FONT_BODY}; font-weight: 700; font-size: 15px;
     color: {p['ink']} !important;
