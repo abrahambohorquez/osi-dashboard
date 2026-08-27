@@ -356,6 +356,19 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 [data-testid="stMarkdownContainer"] p {{
     color: {p['ink_soft']}; font-size: 15px; line-height: 1.7; text-align: justify;
 }}
+/* Justify is for running prose, several lines wide: forced onto a short
+   caption in a narrow column (a stat card's one-line "sub", a table
+   cell, a badge) it stretches two or three words across the box with
+   ugly gaps instead of doing anything useful. Everything short and
+   label-shaped opts back out. */
+.mcard, .advisory, .vitals, .riskband, .figsource, .breadcrumb, .metaline,
+.chip, .status-badge, .dateline, .toc-row, .statuslist, .headline-caps,
+.plaintab, .figframe, .site-strip, .masthead {{
+    text-align: left;
+}}
+.mcard *, .advisory *, .vitals *, .riskband *, .toc-row *, .statuslist * {{
+    text-align: left;
+}}
 [data-testid="stMetricValue"] {{ font-family: {FONT_DISPLAY}; color: {p['ink']}; }}
 
 /* Cifras siempre tabulares. Una columna de numeros que baila de ancho es

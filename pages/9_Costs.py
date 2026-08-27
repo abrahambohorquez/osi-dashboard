@@ -101,6 +101,13 @@ hora_pico = int(serie_total.idxmax())
 
 st.write("")
 comp.titulo_seccion("02", "Total impact, split by segment")
+comp.entradilla(
+    "Every county-hour's cost is assigned to residential, commercial or industrial using the "
+    "meter-mix sliders above, then summed across the whole window. The four figures below are "
+    "that sum, not an average: a segment with few meters can still carry most of the dollar "
+    "total if its per-meter rate is far higher, which is exactly what the industrial rate "
+    "(roughly 27,000 times the residential rate per customer-hour) tends to produce."
+)
 cols = st.columns(4)
 tonos = {"residential": "ink", "commercial": "accent", "industrial": "warn"}
 for col, segmento in zip(cols[:3], mezcla):
@@ -135,8 +142,28 @@ if industrial_share > industrial_meters * 2 and total > 0:
         tono="warn",
     )
 
-fig = go.Figure()
 colores_segmento = {"residential": theme.INK, "commercial": theme.ACCENT, "industrial": theme.WARN}
+
+fig_share = go.Figure(go.Bar(
+    x=[float(serie_por_segmento[s].sum()) for s in mezcla], y=list(mezcla.keys()),
+    orientation="h", marker=dict(color=[colores_segmento[s] for s in mezcla]),
+    text=[f"${float(serie_por_segmento[s].sum()):,.0f}" for s in mezcla], textposition="outside",
+))
+theme.aplicar_tema(fig_share, altura=220)
+fig_share.update_xaxes(title_text="USD, whole window")
+fig_share.update_yaxes(title_text=None)
+comp.figura(fig_share, "1", "Total cost by segment, same window as the cards above",
+            fuente="<b>Reading:</b> a segment's bar length is its share of the dollar total, not "
+                   "its share of meters. Compare against the meter-share note on each card above "
+                   "to see the concentration directly.")
+
+st.write("")
+comp.entradilla(
+    "The same totals, now across the hours of the event instead of collapsed into one number "
+    "per segment: whether the industrial share is concentrated in the two peaks or spread evenly "
+    "changes what an operator would do about it."
+)
+fig = go.Figure()
 for segmento in mezcla:
     fig.add_trace(go.Scatter(x=serie_por_segmento[segmento].index, y=serie_por_segmento[segmento].values,
                               mode="lines", name=segmento, stackgroup="costo",
@@ -144,15 +171,36 @@ for segmento in mezcla:
 fig.add_vline(x=schema.ANCLA_H, line_dash="dash", line_color=theme.WARN, line_width=1.2)
 theme.aplicar_tema(fig, altura=400)
 fig.update_yaxes(title_text="USD per hour")
-comp.figura(fig, "1", "Estimated cost per hour by segment, summed across counties",
+comp.figura(fig, "2", "Estimated cost per hour by segment, summed across counties",
             fuente="<b>Rates:</b> Lawrence Berkeley National Laboratory LBNL-54365, a "
                    "meta-analysis of utility interruption-cost surveys. <b>Caveat:</b> rates "
                    "are national averages applied uniformly; no regional or seasonal "
                    "adjustment is made.")
 
 comp.titulo_seccion("03", "Costliest counties")
+comp.entradilla(
+    "The same per-county-hour cost, now summed by county instead of by hour or by segment: a "
+    "third cut of the same underlying number, this time answering where rather than when or "
+    "which kind of customer."
+)
 ranking = (df_costo.groupby(["fipsCode", "countyName"])[["cost_residential", "cost_commercial", "cost_industrial", "cost_total"]]
            .sum().reset_index().sort_values("cost_total", ascending=False).head(15))
+
+fig_condados = go.Figure()
+for segmento in mezcla:
+    fig_condados.add_trace(go.Bar(
+        x=ranking[f"cost_{segmento}"], y=ranking["countyName"], orientation="h",
+        name=segmento, marker=dict(color=colores_segmento[segmento]),
+    ))
+fig_condados.update_layout(barmode="stack")
+theme.aplicar_tema(fig_condados, altura=max(360, 26 * len(ranking)))
+fig_condados.update_xaxes(title_text="USD, whole window")
+fig_condados.update_yaxes(title_text=None, autorange="reversed")
+comp.figura(fig_condados, "3", "The 15 costliest counties, split by segment",
+            fuente="<b>Sort:</b> total cost, descending. Bars stack the same three segments as "
+                   "the cards above, so a county that looks tall here is either large or "
+                   "industrial-heavy, and the color split shows which.")
+
 ranking = ranking.rename(columns={"countyName": "county", "cost_residential": "residential (USD)",
                                   "cost_commercial": "commercial (USD)", "cost_industrial": "industrial (USD)",
                                   "cost_total": "total (USD)"})
