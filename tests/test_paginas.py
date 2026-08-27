@@ -43,10 +43,8 @@ TIEMPO_LIMITE = 120  # el mapa animado y el clustering tardan
 def _correr(hoja: Path, estado: dict | None = None) -> AppTest:
     at = AppTest.from_file(str(hoja), default_timeout=TIEMPO_LIMITE)
     # Patterns arranca su propio bucle de reproduccion (st.rerun() en cada
-    # tick, ver pages/3_Patterns.py): sin esto, AppTest nunca ve un run
-    # terminado y se queda esperando hasta el timeout en vez de fallar rapido
-    # o pasar. No es un bug del sitio, es nada mas que el harness de prueba
-    # necesita pausarlo para poder capturar un solo render.
+    # tick): sin esto, AppTest nunca ve un run terminado y se queda
+    # esperando hasta el timeout en vez de pasar en segundos.
     at.session_state["pt_reproduciendo"] = False
     if estado:
         for clave, valor in estado.items():
@@ -96,12 +94,22 @@ def test_hoja_aguanta_un_archivo_sin_osi():
 
 @pytest.mark.parametrize("hoja", HOJAS, ids=IDS)
 def test_cabecera_de_tres_bandas(hoja):
-    """Franja de utilidad + cabecera de unidad + indice de secciones. Es la
-    estructura que hace que se lea como un sitio y no como una app."""
+    """Franja de utilidad + cabecera de unidad + indice de secciones en dos
+    niveles. El marcador `st-key-navsec_` es la regla CSS que cada render
+    emite para resaltar su seccion activa: si desaparece, la fila superior
+    perdio el estado activo o la navegacion entera."""
     texto = _texto(_correr(hoja))
     assert 'class="site-strip"' in texto
     assert 'class="masthead"' in texto
-    assert 'class="navgroup' in texto, "falta el indice de secciones agrupado"
+    assert ".st-key-navsec_" in texto, "falta la marca de seccion activa del indice"
+
+
+@pytest.mark.parametrize("hoja", HOJAS, ids=IDS)
+def test_hallazgos_no_son_todos_cajas(hoja):
+    """La variante con caja de los hallazgos queda reservada: nunca mas de
+    una por pagina. Si esto falla, alguien volvio a encajonar la prosa."""
+    texto = _texto(_correr(hoja))
+    assert texto.count('class="finding destacado"') <= 1
 
 
 @pytest.mark.parametrize("hoja", HOJAS, ids=IDS)

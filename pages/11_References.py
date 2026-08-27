@@ -16,8 +16,9 @@ comp.preparar_hoja(dict(page_title="References | OSI Analysis Desk", layout="wid
 
 comp.encabezado_pagina(
     "References and credits",
-    "Every statistical method computed anywhere on this site, with its primary source. Listed "
-    "here only if it is actually implemented: this is a citation list, not a reading list.",
+    "Every statistical method computed anywhere on this site, with its primary source. A "
+    "method appears here only if some page actually runs it.",
+    con_datos=False,
 )
 
 comp.titulo_seccion("01", "Team")
@@ -51,7 +52,7 @@ st.write(
 )
 
 comp.titulo_seccion("04", "References")
-st.write("Only the sources behind methods actually implemented in this dashboard, not a general reading list.")
+st.write("One entry per method, each with a note on which page runs it.")
 
 referencias = [
     ("Frisch, R. and Waugh, F. V. (1933).",
@@ -65,7 +66,7 @@ referencias = [
     ("Moran, P. A. P. (1950).",
      "Notes on Continuous Stochastic Phenomena. <i>Biometrika</i>, 37(1/2), 17-23.",
      "The original definition of the spatial autocorrelation statistic (Moran's I) computed on "
-     "the Storm map and Patterns pages."),
+     "the Storm field analysis and Multivariate patterns pages."),
     ("Lawrence Berkeley National Laboratory, LBNL-54365.",
      "Value of Service Reliability for Electric Utility Customers.",
      "The meta-analysis of real interruption-cost surveys behind the residential, commercial and "

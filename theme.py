@@ -368,7 +368,7 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
    que distingue la cabecera de un sitio de la toolbar de una app.
    ================================================================== */
 .site-strip {{
-    margin: -1rem -1rem 0; padding: 5px 1.4rem;
+    margin: 0 -1rem 0; padding: 5px 1.4rem;
     background: {p['ink_deep']}; display: flex; justify-content: space-between;
     align-items: center; gap: 16px; flex-wrap: wrap;
 }}
@@ -383,10 +383,10 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
     display: flex; justify-content: space-between; align-items: flex-end;
     gap: 24px; flex-wrap: wrap; border-bottom: 3px solid {p['warn']};
 }}
-.masthead .unidad {{ display: flex; flex-direction: column; gap: 3px; }}
+.masthead .unidad {{ display: flex; flex-direction: column; gap: 3px; min-width: 0; }}
 .masthead .unidad .l1 {{
     font-family: {FONT_DISPLAY}; font-weight: 900; font-size: 20px; letter-spacing: .4px;
-    color: #FFFFFF !important; line-height: 1.05;
+    color: #FFFFFF !important; line-height: 1.1; overflow-wrap: anywhere;
 }}
 .masthead .unidad .l2 {{
     font-family: {FONT_BODY}; font-weight: 600; font-size: 11px; letter-spacing: 1.7px;
@@ -400,35 +400,69 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 }}
 .masthead .sello .meta {{ font-size: 10.5px; color: #93A6C6 !important; letter-spacing: .3px; }}
 
-/* Indice de secciones: enlaces agrupados bajo un rotulo de seccion, no
-   once pestanas planas en fila. El rotulo dorado separa los grupos. */
-.st-key-navbar_links {{
-    background: {p['ink_mid']}; margin: 0 -1rem var(--apartado); padding: 2px 1rem 3px;
-    border-bottom: 1px solid rgba(255,255,255,0.10);
+/* Indice de secciones en DOS NIVELES DE VERDAD, que es lo que hacen los
+   cuatro sitios de referencia (SPC: 5 items arriba, NHC: 6, iii.org: 6,
+   weather.gov: 9; en ninguno aparece una subpagina suelta en la barra).
+   Fila 1: solo los cinco nombres de seccion, todos con el mismo ancho de
+   trato, mismo peso, mismo color; la seccion activa se marca con blanco
+   y subrayado, que es estado, no acento. Fila 2: unicamente las paginas
+   de la seccion activa, en una franja mas clara y mas baja. La version
+   anterior (rotulos dorados en negrita mezclados con enlaces planos,
+   partiendo en dos filas desiguales) era una lista plana disfrazada. */
+.st-key-navtop {{
+    background: {p['ink_mid']}; margin: 0 -1rem; padding: 0 1rem;
 }}
-.st-key-navbar_links div[data-testid="stHorizontalBlock"] {{
-    flex-wrap: wrap; gap: 0; row-gap: 0; align-items: center;
+.st-key-navtop div[data-testid="stHorizontalBlock"] {{
+    flex-wrap: nowrap; gap: 0; align-items: stretch;
 }}
-.st-key-navbar_links div[data-testid="stColumn"] {{
+.st-key-navtop div[data-testid="stColumn"] {{
     width: fit-content !important; flex: 0 0 auto !important; min-width: 0 !important;
 }}
-.st-key-navbar_links a, .st-key-navbar_links p {{
-    color: #C7D5EC !important; text-decoration: none; font-size: 11.5px;
-    padding: 9px 9px !important; font-family: {FONT_BODY}; white-space: nowrap;
-    letter-spacing: .2px; font-weight: 600; border-bottom: 2px solid transparent;
-    display: inline-block; margin: 0 !important;
+.st-key-navtop a, .st-key-navtop p {{
+    color: #C7D5EC !important; text-decoration: none; font-size: 12px;
+    font-family: {FONT_BODY}; font-weight: 700; letter-spacing: 1.1px;
+    text-transform: uppercase; white-space: nowrap;
+    padding: 12px 18px !important; margin: 0 !important; display: inline-block;
+    border-bottom: 3px solid transparent;
 }}
-.st-key-navbar_links a:hover {{ color: #FFFFFF !important; border-bottom-color: #E8C77A; }}
-.st-key-navbar_links a[aria-current] {{
-    color: #FFFFFF !important; border-bottom-color: #FFFFFF;
+.st-key-navtop a:hover {{ color: #FFFFFF !important; background: rgba(255,255,255,0.06); }}
+
+.st-key-navsub {{
+    background: {p['ink']}; margin: 0 -1rem var(--apartado); padding: 0 1rem;
+    border-top: 1px solid rgba(255,255,255,0.12);
 }}
-.navgroup {{
-    display: inline-block; font-family: {FONT_BODY}; font-size: 9.5px; font-weight: 800;
-    letter-spacing: 1.5px; text-transform: uppercase; color: #E8C77A !important;
-    padding: 9px 10px 9px 16px; border-left: 1px solid rgba(255,255,255,0.16);
-    white-space: nowrap;
+.st-key-navsub div[data-testid="stHorizontalBlock"] {{
+    flex-wrap: wrap; gap: 0; align-items: center;
 }}
-.navgroup.primero {{ border-left: none; padding-left: 0; }}
+.st-key-navsub div[data-testid="stColumn"] {{
+    width: fit-content !important; flex: 0 0 auto !important; min-width: 0 !important;
+}}
+.st-key-navsub a, .st-key-navsub p {{
+    color: #A9BEDD !important; text-decoration: none; font-size: 12px;
+    font-family: {FONT_BODY}; font-weight: 500; letter-spacing: .2px; white-space: nowrap;
+    padding: 8px 14px 8px 0 !important; margin: 0 18px 0 0 !important; display: inline-block;
+}}
+.st-key-navsub a:hover {{ color: #FFFFFF !important; }}
+.st-key-navsub a[aria-current] {{ color: #FFFFFF !important; font-weight: 700; }}
+/* Sin subfila (secciones de una sola pagina), la fila superior cierra la
+   cabecera y toma el margen de separacion. */
+.st-key-navtop_cierra {{
+    background: {p['ink_mid']}; margin: 0 -1rem var(--apartado); padding: 0 1rem;
+}}
+.st-key-navtop_cierra div[data-testid="stHorizontalBlock"] {{
+    flex-wrap: nowrap; gap: 0; align-items: stretch;
+}}
+.st-key-navtop_cierra div[data-testid="stColumn"] {{
+    width: fit-content !important; flex: 0 0 auto !important; min-width: 0 !important;
+}}
+.st-key-navtop_cierra a, .st-key-navtop_cierra p {{
+    color: #C7D5EC !important; text-decoration: none; font-size: 12px;
+    font-family: {FONT_BODY}; font-weight: 700; letter-spacing: 1.1px;
+    text-transform: uppercase; white-space: nowrap;
+    padding: 12px 18px !important; margin: 0 !important; display: inline-block;
+    border-bottom: 3px solid transparent;
+}}
+.st-key-navtop_cierra a:hover {{ color: #FFFFFF !important; background: rgba(255,255,255,0.06); }}
 
 /* ==================================================================
    2. CABECERA DE PAGINA
@@ -509,9 +543,8 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
    tipografica de los productos de texto de la NWS y, junto con las
    migas, lo que mas aleja esto de "otra app con tarjetas". */
 .headline-caps {{
-    font-family: {FONT_MONO}; font-weight: 600; font-size: 15px; letter-spacing: .4px;
-    color: {p['ink']} !important; margin: 0 0 var(--bloque); padding: 12px 0;
-    border-top: 2px solid {p['ink']}; border-bottom: 2px solid {p['ink']};
+    font-family: {FONT_MONO}; font-weight: 600; font-size: 15.5px; letter-spacing: .4px;
+    color: {p['ink']} !important; margin: 0 0 18px;
     text-transform: uppercase; line-height: 1.5;
 }}
 
@@ -552,8 +585,8 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
    que esta vigente ahora mismo, una linea por cosa, sin parrafo. */
 .statuslist {{ margin: 0 0 var(--bloque); padding: 0; list-style: none; }}
 .statuslist li {{
-    padding: 7px 0 7px 20px; border-bottom: 1px solid {p['border_soft']};
-    font-size: 14.5px; color: {p['ink_soft']} !important; line-height: 1.55;
+    padding: 5px 0 5px 20px;
+    font-size: 15px; color: {p['ink_soft']} !important; line-height: 1.6;
     position: relative;
 }}
 .statuslist li::before {{
@@ -598,12 +631,8 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 
 /* Fila de vitales: una caja con separadores verticales, no cuatro
    tarjetas flotando. Un bloque, no cuatro objetos. */
-.vitals {{
-    border: var(--hair); border-top: 3px solid {p['ink']}; background: {p['panel']};
-    padding: 14px 0; margin: 0 0 var(--bloque);
-}}
-.vitals .celda {{ padding: 0 18px; border-left: var(--hair); }}
-.vitals .celda.primera {{ border-left: none; }}
+.vitals {{ padding: 4px 0; margin: 0 0 var(--bloque); gap: 36px; flex-wrap: wrap; }}
+.vitals .celda {{ padding: 0; }}
 .vitals .k {{
     font-family: {FONT_BODY}; font-weight: 700; font-size: 10px; letter-spacing: 1.4px;
     text-transform: uppercase; color: {p['muted']} !important; margin-bottom: 5px;
@@ -616,10 +645,7 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 
 /* La tarjeta antigua se conserva para las hojas que aun la usan, pero
    alineada al ritmo nuevo y bastante mas contenida que antes. */
-.mcard {{ border-top: 3px solid {p['accent']}; padding: 14px 16px 4px 0; height: 100%; }}
-.mcard.tone-ok {{ border-top-color: {p['ok']}; }}
-.mcard.tone-warn {{ border-top-color: {p['warn']}; }}
-.mcard.tone-ink {{ border-top-color: {p['ink']}; }}
+.mcard {{ padding: 6px 16px 4px 0; height: 100%; }}
 .mcard .lbl {{
     font-family: {FONT_BODY}; font-weight: 700; font-size: 10px; letter-spacing: 1.4px;
     text-transform: uppercase; color: {p['muted']} !important; margin-bottom: 6px;
@@ -638,8 +664,7 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
    ================================================================== */
 .figframe {{ margin: 0 0 4px; }}
 .figframe .cab {{
-    display: flex; align-items: baseline; gap: 10px; padding-bottom: 7px;
-    border-bottom: 2px solid {p['ink']}; margin-bottom: 2px; flex-wrap: wrap;
+    display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; flex-wrap: wrap;
 }}
 .figframe .fnum {{
     font-family: {FONT_MONO}; font-size: 10.5px; font-weight: 600; letter-spacing: .8px;
@@ -660,8 +685,7 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
    6. TEXTO Y APARTADOS
    ================================================================== */
 .section-head {{
-    display: flex; align-items: baseline; gap: 12px; margin: var(--apartado) 0 14px;
-    padding-bottom: 8px; border-bottom: 2px solid {p['ink']};
+    display: flex; align-items: baseline; gap: 12px; margin: var(--apartado) 0 12px;
 }}
 .section-head .snum {{
     font-family: {FONT_MONO}; font-weight: 600; font-size: 12px; color: {p['accent']} !important;
@@ -681,30 +705,32 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 }}
 .standfirst b {{ color: {p['ink']} !important; }}
 
-.finding {{
-    border-left: 3px solid {p['accent']}; padding: 4px 0 4px 18px; margin: 0 0 var(--bloque);
-}}
-.finding.tone-accent {{ border-left-color: {p['accent']}; }}
-.finding.tone-ok {{ border-left-color: {p['ok']}; }}
-.finding.tone-warn {{ border-left-color: {p['warn']}; }}
-.finding.tone-ink {{ border-left-color: {p['ink']}; }}
+.finding {{ margin: 0 0 var(--bloque); max-width: 74ch; }}
 .finding .flabel {{
-    font-family: {FONT_BODY}; font-weight: 800; font-size: 10.5px; letter-spacing: 1.6px;
-    text-transform: uppercase; margin-bottom: 7px;
+    display: inline; font-family: {FONT_BODY}; font-weight: 700; font-size: 15px;
+    color: {p['ink']} !important;
 }}
-.finding.tone-accent .flabel {{ color: {p['accent']} !important; }}
-.finding.tone-ok .flabel {{ color: {p['ok']} !important; }}
-.finding.tone-warn .flabel {{ color: {p['warn']} !important; }}
-.finding.tone-ink .flabel {{ color: {p['ink']} !important; }}
-.finding p {{ margin: 0; color: {p['ink_soft']} !important; font-size: 14.5px; line-height: 1.7; }}
+.finding .flabel::after {{ content: ". "; }}
+.finding p {{
+    display: inline; margin: 0; color: {p['ink_soft']} !important; font-size: 15px;
+    line-height: 1.72;
+}}
 .finding p b {{ color: {p['ink']} !important; }}
+/* La unica variante con caja: reservada, como los avisos de ciclon de la
+   NHC, para lo que de verdad interrumpe (un signo que se invierte, una
+   identidad oculta). Como mucho una por pagina, y condicional. */
+.finding.destacado {{
+    display: block; border-left: 3px solid {p['warn']}; padding: 4px 0 4px 18px;
+}}
+.finding.destacado .flabel {{ display: block; margin-bottom: 6px; color: {p['warn']} !important; }}
+.finding.destacado .flabel::after {{ content: ""; }}
+.finding.destacado p {{ display: block; }}
 
 /* Nota de procedencia de los datos. Sin fondo de color y sin icono: una
    regla lateral y letra pequena, como una nota al pie metodologica. */
 .banner-sim {{
-    border-left: 3px solid {p['accent']}; padding: 6px 0 6px 18px; margin: 0 0 var(--apartado);
-    font-family: {FONT_MONO}; font-size: 11.5px; line-height: 1.65;
-    color: {p['muted']} !important; max-width: 82ch;
+    margin: 0 0 var(--apartado); font-family: {FONT_MONO}; font-size: 11.5px;
+    line-height: 1.65; color: {p['muted']} !important; max-width: 82ch;
 }}
 .banner-sim, .banner-sim * {{ color: {p['muted']} !important; }}
 .banner-sim b, .banner-sim b * {{ color: {p['ink']} !important; font-weight: 600; }}
@@ -715,7 +741,7 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
     line-height: 1.5; max-width: 56ch;
 }}
 
-.card {{ background: {p['panel']}; border: var(--hair); padding: 16px 18px; height: 100%; }}
+.card {{ padding: 2px 0; height: 100%; }}
 .card h4 {{ font-family: {FONT_DISPLAY}; margin: 0 0 7px; color: {p['ink']}; font-size: 15px; }}
 .card p {{ color: {p['muted']} !important; font-size: 13px; line-height: 1.65; margin: 0; }}
 
@@ -728,9 +754,8 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 /* Aviso de momento concreto dentro de una animacion. Ahora hereda el
    color del peldano de la escala en vez de tener su propio dorado. */
 .event-banner {{
-    padding: 9px 15px; margin: 0 0 10px; font-family: {FONT_MONO}; font-size: 12px;
-    border: 1px solid {p['border']}; border-left: 4px solid {p['ink']};
-    background: {p['panel']}; color: {p['ink']} !important; letter-spacing: .1px;
+    margin: 0 0 8px; font-family: {FONT_MONO}; font-size: 12.5px;
+    color: {p['ink']} !important; letter-spacing: .1px;
 }}
 
 /* Indice de contenidos en forma de tabla de productos, no de tarjetas.
@@ -758,7 +783,7 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 
 /* "Ver tambien": los sitios reales enlazan hacia dentro al final de cada
    pagina; las apps te dejan en un callejon. */
-.seealso {{ border-top: 2px solid {p['ink']}; margin: var(--apartado) 0 0; padding-top: 10px; }}
+.seealso {{ margin: var(--apartado) 0 0; }}
 .seealso .t {{
     font-family: {FONT_BODY}; font-size: 10.5px; font-weight: 800; letter-spacing: 1.6px;
     text-transform: uppercase; color: {p['muted']} !important; margin-bottom: 4px;
@@ -781,6 +806,18 @@ p, li, span, label, div {{ color: {p['ink_soft']}; }}
 .sitefoot a {{ color: #C7D5EC !important; }}
 
 hr.thin {{ border: none; border-top: var(--hair); margin: var(--bloque) 0; }}
+
+table.plaintab {{ border-collapse: collapse; margin: 0 0 var(--bloque); min-width: 46ch; }}
+table.plaintab th {{
+    font-family: {FONT_BODY}; font-size: 10.5px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: {p['muted']}; text-align: left;
+    padding: 0 34px 6px 0; border-bottom: var(--hair);
+}}
+table.plaintab td {{
+    font-family: {FONT_MONO}; font-size: 13px; color: {p['ink']};
+    padding: 6px 34px 6px 0; border-bottom: 1px solid {p['border_soft']};
+}}
+table.plaintab td.txt {{ font-family: {FONT_BODY}; font-size: 13.5px; }}
 
 /* Tablas: rejilla de datos, no tarjetas redondeadas. */
 [data-testid="stDataFrame"] {{ border: var(--hair); }}

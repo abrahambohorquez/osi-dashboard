@@ -29,7 +29,7 @@ comp.banner_datos_simulados()
 
 st.markdown("""
 <div class="finding tone-ink">
-  <div class="flabel">What this means before the math</div>
+  <div class="flabel">A grid that has already broken breaks differently</div>
   <p>
   "Hysteresis" just means the system remembers what already happened to it, so the same input
   doesn't always produce the same output. Think of a tree that lost its weakest branches in the
@@ -56,32 +56,23 @@ if len(comparacion) > 2:
     correlacion = comparacion["pico_ola1"].corr(comparacion["pico_ola2"])
     razon = (comparacion["pico_ola2"] / comparacion["pico_ola1"].replace(0, np.nan)).median()
 
-    if correlacion < 0.3:
-        nivel_hysteresis = "severe"
-    elif correlacion < 0.6:
-        nivel_hysteresis = "warning"
-    elif correlacion < 0.85:
-        nivel_hysteresis = "watch"
-    else:
-        nivel_hysteresis = "calm"
     comp.hallazgo(
-        f"What the comparison between waves shows {comp.insignia_severidad(nivel_hysteresis)}",
+        f"A typical county repeats only {razon:.2f}x of its first peak",
         f"The correlation between wave 1's peak and wave 2's peak, county by county, is "
-        f"<b>{correlacion:.3f}</b>. If the two waves were interchangeable, that correlation would "
-        f"be close to 1. At the median, a county only repeats <b>{razon:.2f}x</b> of its first "
-        "peak in the second wave: evidence that infrastructure already hit responds "
-        "differently, it doesn't just persist.",
+        f"<b>{correlacion:.3f}</b>: which counties get hit hardest barely changes between waves. "
+        f"What changes is the size. The median second-wave peak is <b>{razon:.2f}x</b> the "
+        "first, so infrastructure already hit responds differently, it does not simply persist.",
         tono="accent",
     )
 
     comp.fila_metricas([
-        ("correlation between peaks", f"{correlacion:.3f}", "the closer to 0, the less alike the waves are", "ink"),
+        ("correlation between peaks", f"{correlacion:.3f}", "how strongly wave 1 predicts wave 2's ranking", "ink"),
         ("median wave2 / wave1", f"{razon:.2f}x", "a typical county repeats this much of its first peak", "accent"),
         ("counties compared", f"{len(comparacion)}", "with data in both halves of the window", "ink"),
     ])
 
     comp.hallazgo(
-        "Business read",
+        "A resource plan built off wave 1 overstates wave 2",
         "Crew and parts allocation planned off the first wave's severity map will overstate what "
         "the second wave needs almost everywhere. A static resource plan built for \"the storm\" "
         "as one event, instead of wave by wave, is planning for a second hit that mostly doesn't "

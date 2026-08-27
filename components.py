@@ -177,40 +177,56 @@ def cabecera_sitio() -> None:
 
 
 def indice_secciones() -> None:
-    """La barra de navegacion, agrupada por seccion.
+    """El indice de secciones, en dos niveles de verdad.
 
-    Cada grupo se abre con su rotulo en dorado y a continuacion vienen sus
-    enlaces. Los enlaces siguen siendo `st.page_link`, asi que Streamlit
-    marca solo cual es la pagina activa; si el contexto multipagina no esta
-    disponible (algunos entornos de prueba), cae a texto plano sin tumbar la
-    hoja.
+    Lo que hacen los cuatro sitios de referencia, contado: SPC muestra 5
+    items de primer nivel en una fila, NHC 6, iii.org 6, weather.gov 9, y
+    en ninguno de los cuatro aparece una subpagina suelta dentro de la
+    barra: las subpaginas viven en desplegables o en el rail lateral.
+
+    Aqui: la fila superior lleva solo los cinco nombres de seccion, todos
+    con el mismo peso, tamano y color (la activa se marca con blanco y un
+    subrayado, que es estado, no acento). La fila inferior muestra
+    unicamente las paginas de la seccion activa. Las secciones de una sola
+    pagina no abren subfila. El indice completo sigue a un clic en la barra
+    lateral, como el rail izquierdo de una oficina de weather.gov.
+
+    Streamlit no tiene desplegables al vuelo, asi que "sus paginas solo
+    aparecen cuando la seccion esta activa" se resuelve en servidor: cada
+    render ya sabe en que seccion esta.
     """
-    # Una columna por rotulo de grupo y una por enlace; el CSS las deja a
-    # ancho de contenido y las envuelve en varias lineas si hace falta.
-    piezas: list[tuple[str, object]] = []
-    for i, (clave_sec, nombre_sec) in enumerate(SECCIONES):
-        paginas = [p for p in PAGINAS if p[4] == clave_sec]
-        if not paginas:
-            continue
-        piezas.append(("grupo", (nombre_sec, i == 0)))
-        for p in paginas:
-            piezas.append(("enlace", p))
+    actual = _pagina_actual() or PAGINA_POR_CLAVE["home"]
+    seccion_activa = actual[4]
+    paginas_activas = [p for p in PAGINAS if p[4] == seccion_activa]
+    con_subfila = len(paginas_activas) > 1
 
-    with st.container(key="navbar_links"):
-        cols = st.columns(len(piezas))
-        for col, (tipo, dato) in zip(cols, piezas):
+    # Marca de seccion activa: una regla CSS por render, dirigida a la
+    # columna de esa seccion. Es tambien lo que las pruebas pueden leer.
+    st.markdown(
+        f"<style>.st-key-navsec_{seccion_activa} a {{ color: #FFFFFF !important; "
+        f"border-bottom-color: #FFFFFF !important; }}</style>",
+        unsafe_allow_html=True)
+
+    with st.container(key="navtop" if con_subfila else "navtop_cierra"):
+        cols = st.columns(len(SECCIONES))
+        for col, (clave_sec, nombre_sec) in zip(cols, SECCIONES):
+            lider = next(p for p in PAGINAS if p[4] == clave_sec)
             with col:
-                if tipo == "grupo":
-                    nombre, primero = dato
-                    st.markdown(
-                        f'<span class="navgroup{" primero" if primero else ""}">{nombre}</span>',
-                        unsafe_allow_html=True)
-                else:
-                    _, ruta, etiqueta = dato[0], dato[1], dato[2]
+                with st.container(key=f"navsec_{clave_sec}"):
                     try:
-                        st.page_link(ruta, label=etiqueta)
+                        st.page_link(lider[1], label=nombre_sec.replace("&amp;", "&"))
                     except Exception:
-                        st.caption(etiqueta)
+                        st.caption(nombre_sec.replace("&amp;", "&"))
+
+    if con_subfila:
+        with st.container(key="navsub"):
+            cols = st.columns(len(paginas_activas))
+            for col, p in zip(cols, paginas_activas):
+                with col:
+                    try:
+                        st.page_link(p[1], label=p[2])
+                    except Exception:
+                        st.caption(p[2])
 
 
 def rail_lateral() -> None:
@@ -259,31 +275,37 @@ def migas(seccion: str | None, titulo: str) -> str:
     return f'<div class="breadcrumb">{sep.join(partes)}</div>'
 
 
-def _metadatos_archivo() -> str:
+def _metadatos_archivo(con_datos: bool = True) -> str:
     """La franja de metadatos que va bajo el titulo de cada pagina: de que
     archivo salen los numeros, cuantas filas tiene y cuando se calculo. Es la
-    linea que hace que la pagina parezca fechada y versionada."""
+    linea que hace que la pagina parezca fechada y versionada.
+
+    `con_datos=False` deja solo el sello de emision: en una pagina cuyo
+    contenido no depende del archivo (References), listar sus filas y
+    condados es ruido de plantilla, no informacion."""
     fuente, etiqueta = _fuente_activa()
     ident, sello = _sello()
-    campos = [f"<b>INPUT</b> {etiqueta}"]
-    try:
-        df = st.session_state.get("df")
-        if df is not None and len(df):
-            r = schema.resumen_condados(df)
-            campos.append(f"<b>COUNTIES</b> {r['n_condados']}")
-            campos.append(f"<b>ROWS</b> {r['n_filas']:,}")
-            if r["n_horas"]:
-                campos.append(f"<b>HOURS</b> {r['n_horas']}")
-            if r["estados"]:
-                campos.append("<b>AREA</b> " + " ".join(r["estados"]))
-    except Exception:
-        pass
+    campos = []
+    if con_datos:
+        campos.append(f"<b>INPUT</b> {etiqueta}")
+        try:
+            df = st.session_state.get("df")
+            if df is not None and len(df):
+                r = schema.resumen_condados(df)
+                campos.append(f"<b>COUNTIES</b> {r['n_condados']}")
+                campos.append(f"<b>ROWS</b> {r['n_filas']:,}")
+                if r["n_horas"]:
+                    campos.append(f"<b>HOURS</b> {r['n_horas']}")
+                if r["estados"]:
+                    campos.append("<b>AREA</b> " + " ".join(r["estados"]))
+        except Exception:
+            pass
     campos.append(f"<b>COMPUTED</b> {sello}")
     return '<div class="metaline">' + "".join(f"<span>{c}</span>" for c in campos) + "</div>"
 
 
 def encabezado_pagina(titulo: str, descripcion: str, seccion: str | None = None,
-                      kicker: str | None = None) -> None:
+                      kicker: str | None = None, con_datos: bool = True) -> None:
     """La cabecera de una pagina: migas, rotulo de seccion, titulo,
     entradilla y franja de metadatos.
 
@@ -303,7 +325,7 @@ def encabezado_pagina(titulo: str, descripcion: str, seccion: str | None = None,
   <h1>{titulo}</h1>
   <p class="lede">{descripcion}</p>
 </div>
-{_metadatos_archivo()}
+{_metadatos_archivo(con_datos)}
 """, unsafe_allow_html=True)
 
 
@@ -382,8 +404,16 @@ def titular(texto: str) -> None:
 
     Es la firma tipografica de los productos de texto de la NWS (los
     advisories de la NHC abren exactamente asi) y, junto con las migas, es lo
-    que mas rapido cambia la lectura de "app" a "producto publicado"."""
+    que mas rapido cambia la lectura de "app" a "producto publicado".
+
+    Las entidades HTML se restauran a minuscula despues de pasar el texto a
+    mayusculas: `&MIDDOT;` no es una entidad valida y el navegador la pinta
+    literal, que fue exactamente lo que paso en la primera version de la
+    portada."""
+    import re
+
     limpio = str(texto).strip().strip(".").upper()
+    limpio = re.sub(r"&([A-Z]+);", lambda m: f"&{m.group(1).lower()};", limpio)
     st.markdown(f'<div class="headline-caps">...{limpio}...</div>', unsafe_allow_html=True)
 
 
@@ -508,11 +538,10 @@ def fila_metricas(metricas: list[tuple[str, str, str, str]]) -> None:
     Se dibuja como un unico bloque de HTML (y no con `st.columns`) justamente
     para poder encerrarlas en una sola caja."""
     celdas = []
-    for i, m in enumerate(metricas):
+    for m in metricas:
         lbl, val, sub = m[0], m[1], (m[2] if len(m) > 2 else "")
-        primera = " primera" if i == 0 else ""
         celdas.append(
-            f'<div class="celda{primera}" style="flex:1;min-width:0;">'
+            '<div class="celda">'
             f'<div class="k">{lbl}</div><div class="v">{val}</div>'
             + (f'<div class="s">{sub}</div>' if sub else "")
             + "</div>"
@@ -577,12 +606,20 @@ def titulo_seccion(numero: str, titulo: str) -> None:
 """, unsafe_allow_html=True)
 
 
-def hallazgo(titulo: str, texto_html: str, tono: str = "accent") -> None:
-    """Caja destacada con algo que el sitio encontro por su cuenta en el
-    archivo activo. `texto_html` admite <b> para resaltar cifras."""
+def hallazgo(titulo: str, texto_html: str, tono: str = "accent",
+             destacado: bool = False) -> None:
+    """Un hallazgo calculado sobre el archivo activo.
+
+    Por defecto es PROSA CORRIDA: la conclusion en negrita arrancando el
+    parrafo y el cuerpo a continuacion, sin caja ni regla, que es como una
+    publicacion de datos escribe sus parrafos (iii.org no encierra ni uno).
+    `destacado=True` conserva la caja con regla lateral y queda reservado,
+    como los bloques de ciclon activo de la NHC, para lo unico que debe
+    interrumpir la lectura; como mucho uno por pagina, y condicional."""
+    clase = "finding destacado" if destacado else "finding"
     st.markdown(f"""
-<div class="finding tone-{tono}">
-  <div class="flabel">{titulo}</div>
+<div class="{clase}">
+  <span class="flabel">{titulo}</span>
   <p>{texto_html}</p>
 </div>
 """, unsafe_allow_html=True)
@@ -610,14 +647,20 @@ def tarjeta(titulo: str, texto: str) -> str:
 def banner_datos_simulados() -> None:
     """La nota de procedencia de los datos.
 
-    Deliberadamente escrita como una salvedad metodologica y no como una
-    alerta: sin fondo de color, sin icono, en monoespaciada pequena. Un
-    recuadro amarillo con emoji en cada pagina es el tic mas reconocible de
-    un tablero generado; una nota al margen es lo que pondria una
-    publicacion."""
+    Escrita como salvedad metodologica, no como alerta: sin fondo de color,
+    sin icono, en monoespaciada pequena.
+
+    El parrafo completo solo aparece donde de verdad hace falta leerlo
+    entero: la portada y la hoja de carga. En el resto de paginas se reduce a
+    una linea con un enlace mental a Load data. El mismo parrafo estampado
+    identico doce veces era una de las cosas que hacian que el sitio se
+    leyera como una plantilla y no como paginas escritas una a una."""
     fuente, _ = _fuente_activa()
+    actual = _pagina_actual()
+    completo = actual is None or actual[0] in ("home", "load")
     if fuente == "simulados":
-        st.markdown("""
+        if completo:
+            st.markdown("""
 <div class="banner-sim">
 <b>Input: synthetic sample.</b> Figures on this page are computed from a
 generated storm, not from the challenge dataset, which is covered by a
@@ -627,12 +670,26 @@ published OSI formula) and nothing else. Load your own file under Data &amp;
 docs to recompute every page against real observations.
 </div>
 """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+<div class="banner-sim">
+<b>Input: synthetic sample</b>, not challenge data. Scope and NDA handling
+are described on the Load data page.
+</div>
+""", unsafe_allow_html=True)
     else:
-        st.markdown("""
+        if completo:
+            st.markdown("""
 <div class="banner-sim">
 <b>Input: user-supplied file.</b> Every figure and statistic on this page was
 computed from the file loaded in this browser session. Nothing is written to
 disk; refreshing returns the site to the synthetic sample.
+</div>
+""", unsafe_allow_html=True)
+        else:
+            st.markdown("""
+<div class="banner-sim">
+<b>Input: user-supplied file</b>, held in this browser session only.
 </div>
 """, unsafe_allow_html=True)
 

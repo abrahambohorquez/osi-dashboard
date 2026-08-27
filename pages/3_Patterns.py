@@ -28,7 +28,7 @@ comp.banner_datos_simulados()
 
 comp.titulo_seccion("01", "County cloud in motion")
 comp.entradilla(
-    "Gust against severity, one marker per county, sized by customers tracked and coloured by "
+    "Gust against severity, one marker per county, sized by customers tracked and colored by "
     "state. The animation runs unattended. What a single county's line chart cannot show is the "
     "shape of the whole cloud: whether the region moves together or splits, and whether the "
     "gust-to-severity relationship holds at the same slope throughout the window."
@@ -49,7 +49,7 @@ if resultado_burbujas is not None:
     fig_burbujas, hora_usada, horas_disponibles = resultado_burbujas
     comp.figura(fig_burbujas, "1", "Gust against severity, by county, through the window",
                 fuente="<b>Source:</b> active file. <b>Marker size:</b> customersTracked. "
-                       "<b>Colour:</b> state.")
+                       "<b>Color:</b> state.")
     # El avance del reloj NO se hace aqui. `st.rerun()` aborta el resto del
     # script, asi que mientras la animacion corria, las secciones 02, 03 y 04
     # de esta pagina no llegaban a dibujarse nunca: solo aparecian al pulsar
@@ -95,7 +95,7 @@ if fig_heatmap is not None:
                        "hourly severity vector. <b>Note:</b> only rows are reordered; the time "
                        "axis is never sorted.")
     comp.hallazgo(
-        "Why this matters beyond the math",
+        "Counties that cluster together can share crews and stock",
         "Counties that cluster together on this chart are candidates for a shared operational "
         "plan: if their severity rises and falls together hour by hour, they can share a crew "
         "dispatch schedule or a regional stockpile of repair parts, instead of planning for each "

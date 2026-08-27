@@ -26,7 +26,7 @@ comp.banner_datos_simulados()
 
 st.markdown("""
 <div class="finding tone-ink">
-  <div class="flabel">Why the simulated file looks structurally similar but isn't derived from real data</div>
+  <div class="flabel">Structurally similar to the challenge file, numerically unrelated to it</div>
   <p>
   A few numbers are shared between the simulated file and the real challenge on purpose: 216
   hours per county, an anchor at hour 71, and the OSI formula itself. Those aren't measurements

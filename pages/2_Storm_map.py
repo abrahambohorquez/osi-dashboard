@@ -53,13 +53,14 @@ with col_ctrl2:
                                   index=variables_disponibles.index("osi") if "osi" in variables_disponibles else 0,
                                   format_func=lambda v: theme.ETIQUETAS_VARIABLE.get(v, v))
 
-comp.titulo_seccion("01", "The real US county map")
+comp.titulo_seccion("01", "Severity on real county boundaries")
 
 geo_real = geo_condados.obtener_geometrias() if geo_condados.hay_cache() else None
 if geo_real is None:
     st.info(
-        "The real county boundary file isn't cached on this machine yet. Run "
-        "geo_condados.descargar_y_cachear() once (needs internet) to enable this map."
+        "The county boundary cache (data/condados_reales_reto.geojson) is missing or could "
+        "not be read, so this map is skipped. The file ships with the repository; if it was "
+        "deleted, regenerating it requires internet once. The relief below still works."
     )
 else:
     n_match, n_condados_propios = geo_condados.cobertura(df, geo_real)
@@ -86,14 +87,21 @@ else:
 
     fig_geo = viz.figura_mapa_geografico(df_mapa, geo_cruzado, variable=variable_mapa, paso_horas=paso)
     if fig_geo is not None:
+        comp.marco_figura("1", f"{theme.ETIQUETAS_VARIABLE.get(variable_mapa, variable_mapa)} "
+                               "by county, animated through the window")
         comp.figura_autoreproducida(fig_geo, altura=760, duracion_ms=160, lluvia=True)
+        comp.nota_fuente(
+            "<b>Boundaries:</b> US Census TIGER/Line county polygons, cached locally. "
+            "<b>Fill scale:</b> the same five-category ramp as the severity ribbon; an orange "
+            "county here sits on the orange step there."
+        )
     else:
         st.info("Not enough distinct hours to animate this map at the current frame step.")
 
 comp.titulo_seccion("02", "Severity as a relief surface")
 comp.entradilla(
     "The same field, with severity mapped to height instead of fill. Vertical relief separates "
-    "the two waves more clearly than colour alone, because a moderate second peak stays visibly "
+    "the two waves more clearly than color alone, because a moderate second peak stays visibly "
     "lower than a high first peak where two similar fills would not. The camera orbits "
     "continuously; the chart's own pause control stops it."
 )
@@ -102,7 +110,13 @@ fig_anim = viz.figura_tormenta_3d(df, variable=variable_mapa, paso_horas=paso)
 if fig_anim is None:
     st.info("Not enough distinct hours to animate at this frame step.")
 else:
+    comp.marco_figura("2", "The same field as a relief surface, camera orbiting")
     comp.figura_autoreproducida(fig_anim, altura=760, duracion_ms=140, lluvia=True)
+    comp.nota_fuente(
+        "<b>Height and fill:</b> both encode the selected variable, deliberately, so the "
+        "legend reads once for both maps. The wave call-outs below are located automatically "
+        "as local maxima of the regional mean, not from a hard-coded date."
+    )
 
 serie_agg = df.groupby("hour_idx")["osi"].mean()
 picos_idx = argrelextrema(serie_agg.values, np.greater_equal, order=6)[0]
@@ -127,15 +141,20 @@ if espacial is None:
     df_pico["osi_pico_condado"] = df_pico.groupby("fipsCode")["osi"].transform("max")
     espacial = est.morans_i(df_pico, "osi_pico_condado")
 if espacial:
-    tono_espacial = "accent" if espacial["I"] > espacial["esperado_bajo_azar"] + 0.05 else "ink"
-    nivel_espacial = "warning" if espacial["I"] > espacial["esperado_bajo_azar"] + 0.05 else "calm"
+    agrupado = espacial["I"] > espacial["esperado_bajo_azar"] + 0.05
+    tono_espacial = "accent" if agrupado else "ink"
+    titulo_espacial = (
+        f"Moran's I of {espacial['I']:.3f}: the storm moves, it does not strike at random"
+        if agrupado else
+        f"Moran's I of {espacial['I']:.3f}: little spatial clustering in this file"
+    )
     comp.hallazgo(
-        f"Spatial autocorrelation (Moran's I) {comp.insignia_severidad(nivel_espacial)}",
-        f"The peak severity of each county has a Moran's I of <b>{espacial['I']:.3f}</b> against an "
-        f"expected value of {espacial['esperado_bajo_azar']:.3f} under pure chance. When the real "
-        "number sits clearly above what chance would predict, it means neighboring counties look "
-        "more alike than randomness would explain: the storm moves through the region, it doesn't "
-        "hit counties at random.",
+        titulo_espacial,
+        f"Each county's peak severity has a Moran's I of <b>{espacial['I']:.3f}</b>, against "
+        f"{espacial['esperado_bajo_azar']:.3f} expected under pure chance. A value clearly above "
+        "chance means neighboring counties resemble each other more than randomness would allow, "
+        "which is what a weather system sweeping the region produces and what a model can exploit "
+        "through spatial features.",
         tono=tono_espacial,
     )
 
@@ -172,10 +191,9 @@ with col_curva:
                        "<b>Marker:</b> the hour selected above.")
 
 comp.pie_de_hoja(
-    "Height and fill always encode the same variable, so the legend does not need re-reading "
-    "between the two views. Wave peaks are located automatically as local maxima of the regional "
-    "mean series, not from a hard-coded date. Moran's I uses a distance-decay weight matrix over "
-    "county positions; see References for the source of the statistic."
+    "Moran's I uses a distance-decay weight matrix over county positions; References lists the "
+    "source of the statistic. With simulated data, county shapes are borrowed real boundaries, "
+    "labeled as such above the map."
 )
 comp.ver_tambien(["series", "patterns", "hyst"])
 comp.pie_sitio()

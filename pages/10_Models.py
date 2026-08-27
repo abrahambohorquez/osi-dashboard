@@ -31,7 +31,7 @@ comp.encabezado_pagina(
 
 st.markdown("""
 <div class="finding tone-accent">
-  <div class="flabel">What will live here once it's ready</div>
+  <div class="flabel">What lands here once variant selection closes</div>
   <p>
   RMSE and MAE by horizon (t+1h, t+6h, t+24h, t+48h) for each version tested.<br>
   The error breakdown by severity_tier, which is where the idea for V11-TailGuard came from.<br>
@@ -43,7 +43,7 @@ st.markdown("""
 comp.titulo_seccion("01", "Upload predictions to compare")
 st.caption(
     "The file needs fipsCode, hour_idx (or timestamp_et), and a predicted_osi column. If the "
-    "file you loaded in 'Load data' has the real osi for those same rows, the dashboard computes "
+    "file loaded under Data & docs has the real osi for those same rows, the site computes "
     "the error directly."
 )
 archivo_pred = st.file_uploader("Predictions CSV", type=["csv"], key="pred_upload")

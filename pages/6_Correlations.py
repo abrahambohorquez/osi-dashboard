@@ -58,19 +58,19 @@ if not tabla_vif.empty:
     peor = tabla_vif.iloc[0]
     peor_vif_texto = "infinite" if peor["VIF"] == float("inf") else f"{peor['VIF']:.1f}"
     if peor["VIF"] > 20:
-        nivel_vif = "severe" if peor["VIF"] == float("inf") or peor["VIF"] > 50 else "warning"
         comp.hallazgo(
-            f"Hidden identity found {comp.insignia_severidad(nivel_vif)}",
+            f"{peor['variable']} has a VIF of {peor_vif_texto}: likely a hidden identity",
             f"'<b>{peor['variable']}</b>' has the highest VIF in the table ({peor_vif_texto}). "
             "In the challenge's real data this happens because tp = rain + csnow and "
             "sdswrf = direct_rad + diffuse_rad are exact identities, not coincidences. It's worth "
             "checking whether the same relationship shows up here before leaving both variables "
             "loose in a linear model.",
             tono="warn",
+            destacado=True,
         )
     st.dataframe(tabla_vif.round(2), width="stretch", hide_index=True)
     comp.hallazgo(
-        "Business read",
+        "Where a redundant weather feed could be cut",
         "If a weather feed costs money or a monitoring contract charges per variable, a high-VIF "
         "pair is a place to cut: dropping the redundant one loses almost no predictive signal, "
         "because a model can already reconstruct it from the variable you kept.",

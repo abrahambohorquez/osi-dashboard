@@ -32,19 +32,34 @@ def figura_coordenadas_paralelas(df: pd.DataFrame, variables: list[str], color_v
     p = theme.paleta()
     vmax = float(np.nanpercentile(datos[color_var], 99.5)) or 1e-6
 
+    # theme.ETIQUETAS_VARIABLE's labels are written for a single axis title
+    # (plenty of room); packed side by side as parcoords dimensions, eight
+    # or nine of those full names collide into each other. Short forms only
+    # for this chart, where horizontal room per axis is the scarce thing.
+    etiquetas_cortas = {
+        "gust": "gust (mph)", "wind_speed_10m": "wind (mph)", "mslma": "SLP (hPa)",
+        "sp": "pressure (hPa)", "tp": "precip (mm)", "rain": "rain (mm)",
+        "csnow": "snow (cm)", "soil_moist": "soil moist.", "r2": "humidity (%)",
+        "blh": "blh (m)", "t2m": "temp (K)", "osi": "OSI",
+    }
+
+    def etiqueta_de(v):
+        return etiquetas_cortas.get(v, theme.ETIQUETAS_VARIABLE.get(v, v))
+
     dimensiones = []
     for v in variables:
-        dimensiones.append(dict(label=theme.ETIQUETAS_VARIABLE.get(v, v), values=datos[v],
+        dimensiones.append(dict(label=etiqueta_de(v), values=datos[v],
                                 range=[float(datos[v].min()), float(datos[v].max())]))
 
     fig = go.Figure(go.Parcoords(
         line=dict(color=datos[color_var], colorscale=theme.ESCALA_TORMENTA, cmin=0, cmax=vmax,
-                  showscale=True, colorbar=dict(title=theme.ETIQUETAS_VARIABLE.get(color_var, color_var))),
+                  showscale=True, colorbar=dict(title=etiqueta_de(color_var))),
         dimensions=dimensiones,
+        labelfont=dict(size=11), tickfont=dict(size=9),
     ))
     fig.update_layout(
-        paper_bgcolor=p["panel"], font=dict(family=theme.FONT_BODY, color=p["ink"], size=12),
-        height=440, margin=dict(l=60, r=60, t=40, b=20),
+        paper_bgcolor=p["panel"], font=dict(family=theme.FONT_BODY, color=p["ink"], size=11),
+        height=460, margin=dict(l=60, r=60, t=56, b=20),
     )
     return fig
 

@@ -33,7 +33,7 @@ if "P_t" not in df.columns or "customersTracked" not in df.columns:
 
 st.markdown(f"""
 <div class="finding tone-accent">
-  <div class="flabel">The arithmetic, in plain terms</div>
+  <div class="flabel">One multiplication, summed over every county-hour</div>
   <p>
   For every county and every hour: <b>(customers without power) x (a dollar rate per
   customer-hour)</b> = the dollar cost of that one hour, for that one county. Add that up across
@@ -106,11 +106,14 @@ tonos = {"residential": "ink", "commercial": "accent", "industrial": "warn"}
 for col, segmento in zip(cols[:3], mezcla):
     total_segmento = float(serie_por_segmento[segmento].sum())
     share = 100 * total_segmento / total if total > 0 else 0
+    # Redondear 0.28% a "0%" bajo una cifra de 88 millones de dolares se
+    # lee como un error, porque lo es: un analista escribe "<1%".
+    share_texto = "<1" if 0 < share < 1 else f"{share:.0f}"
     col.markdown(f"""
     <div class="mcard tone-{tonos[segmento]}">
       <div class="lbl">{segmento}</div>
       <div class="val">${total_segmento:,.0f}</div>
-      <div class="sub">{share:.0f}% of total cost, {mezcla[segmento]*100:.0f}% of meters</div>
+      <div class="sub">{share_texto}% of total cost, {mezcla[segmento]*100:.0f}% of meters</div>
     </div>
     """, unsafe_allow_html=True)
 cols[3].markdown(f"""
@@ -124,19 +127,11 @@ cols[3].markdown(f"""
 industrial_share = float(serie_por_segmento["industrial"].sum()) / total * 100 if total > 0 else 0
 industrial_meters = mezcla["industrial"] * 100
 if industrial_share > industrial_meters * 2 and total > 0:
-    razon_concentracion = industrial_share / industrial_meters if industrial_meters > 0 else 0
-    if razon_concentracion >= 5:
-        nivel_concentracion = "severe"
-    elif razon_concentracion >= 3:
-        nivel_concentracion = "warning"
-    else:
-        nivel_concentracion = "watch"
     comp.hallazgo(
-        f"Where the real impact concentrates {comp.insignia_severidad(nivel_concentracion)}",
-        f"Industrial customers are only <b>{industrial_meters:.0f}%</b> of meters, but they account "
-        f"for <b>{industrial_share:.0f}%</b> of the total estimated cost. A regional average OSI can "
-        "look mild while a handful of large industrial accounts absorb most of the dollar impact. "
-        "This is why the page splits cost by segment instead of reporting one blended figure.",
+        f"{industrial_meters:.0f}% of meters carry {industrial_share:.0f}% of the estimated cost",
+        "A regional average OSI can look mild while a handful of large industrial accounts "
+        "absorb most of the dollar impact. That concentration, not the blended total, is the "
+        "operational story here, and it is why the page reports each segment separately.",
         tono="warn",
     )
 
@@ -164,10 +159,10 @@ ranking = ranking.rename(columns={"countyName": "county", "cost_residential": "r
 st.dataframe(ranking[["county", "residential (USD)", "commercial (USD)", "industrial (USD)", "total (USD)"]].round(0),
             width="stretch", hide_index=True)
 
-st.info(
-    "This is a complementary narrative for the report, not a model performance metric. What "
-    "decides whether a model is better is still RMSE, MAE and the asymmetric cost already "
-    "defined in validation."
+comp.pie_de_hoja(
+    "Cost figures on this page are narrative context for the report, not a model performance "
+    "metric. Model comparison still runs on RMSE, MAE and the asymmetric cost defined in "
+    "validation. Rates are quoted in 2002 USD unless the inflation control above is used."
 )
 
 comp.ver_tambien(["map", "hyst", "refs"])

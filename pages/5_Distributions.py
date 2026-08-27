@@ -30,7 +30,8 @@ tabla = est.momentos(df, variables)
 if "osi" in variables:
     fila_osi = tabla.loc["osi"]
     comp.hallazgo(
-        "What kurtosis tells us",
+        f"Kurtosis {fila_osi['kurtosis']:.1f} and {fila_osi['% zeros']:.0f}% zeros rule out a "
+        "plain squared error",
         f"OSI has a kurtosis of <b>{fila_osi['kurtosis']:.1f}</b> (a normal Gaussian bell would "
         f"have 0) and <b>{fila_osi['% zeros']:.0f}%</b> of its hours sit at exactly zero. A "
         "standard mean squared error gives the same weight to getting a zero right as to getting "
@@ -42,9 +43,11 @@ if "osi" in variables:
 
 comp.titulo_seccion("01", "Share of hours at exactly zero")
 comp.entradilla(
-    "Read these as the size of the point mass at zero for each variable. Anything above roughly "
-    "40% is enough for an unweighted squared-error fit to spend most of its capacity reproducing "
-    "calm hours."
+    "The zero share quoted above, broken out by variable: each figure is the size of that "
+    "variable's point mass at zero. Anything above roughly 40% is enough for an unweighted "
+    "squared-error fit to spend most of its capacity reproducing calm hours. Gust sits at zero "
+    "almost never, which is exactly why it stays useful as a predictor when the target does not "
+    "move."
 )
 comp.fila_metricas([
     (var, f"{tabla.loc[var, '% zeros']:.1f}%", "of hours at exactly zero", "accent")

@@ -53,10 +53,14 @@ if tiene_osi:
     nivel_pico = theme.nivel_para_osi(pico_global)
     d_nivel = theme.datos_nivel(nivel_pico)
 
-    # El condado y el estado del peor momento del archivo.
+    # El condado y el estado del peor momento del archivo. El estado solo
+    # se anade si el nombre del condado no lo trae ya entre parentesis (los
+    # nombres simulados vienen como "Simulated County 007 (SIM-A)").
     fila_pico = df.loc[df["osi"].idxmax()]
     condado_pico = str(fila_pico.get("countyName", "n/a"))
     estado_pico = str(fila_pico.get("stateAbbr", ""))
+    if estado_pico and estado_pico in condado_pico:
+        estado_pico = ""
 
     # Pico por condado y reparto por categoria: cuantos condados llegaron a
     # cada peldano de la escala en algun momento de la ventana.
@@ -91,9 +95,9 @@ else:
 
 comp.encabezado_pagina(
     "Current products",
-    "This page summarises the outage record currently loaded into the site and indexes every "
-    "analysis product built on top of it. Category, headline figures and wave structure below "
-    "are recomputed from the active file each time the page is served.",
+    "The outage record currently loaded, and the index of every product built on it. Category, "
+    "headline figures and wave structure are recomputed from that file each time this page is "
+    "served; nothing below is transcribed from the report.",
     seccion="summary",
 )
 
@@ -104,7 +108,8 @@ comp.encabezado_pagina(
 if tiene_osi:
     comp.titular(
         f"peak outage severity {pico_global:.3f} at hour {hora_pico} "
-        f"in {condado_pico} {estado_pico} &middot; category {d_nivel['numero']} {d_nivel['abrev']}"
+        f"in {condado_pico}{(' ' + estado_pico) if estado_pico else ''} "
+        f"&middot; category {d_nivel['numero']} {d_nivel['abrev']}"
     )
 
     items = [
@@ -124,12 +129,6 @@ if tiene_osi:
             f"{'below' if atenuacion > 0 else 'above'} the first."
             f"<span class='cuando'>see Hysteresis</span>"
         )
-    items.append(
-        "<b>Input is the synthetic sample.</b> Challenge observations are under NDA and are "
-        "never committed to this repository."
-        if st.session_state.get("fuente", "simulados") == "simulados" else
-        "<b>Input is a user-supplied file</b>, held in this browser session only."
-    )
     comp.lista_estado(items)
 
     comp.cinta_riesgo(
@@ -152,21 +151,24 @@ comp.banner_datos_simulados()
 # ---------------------------------------------------------------------
 # 2. Vitales del archivo, en formato advisory.
 # ---------------------------------------------------------------------
-comp.titulo_seccion("01", "Record vitals")
+comp.titulo_seccion("01", "Event vitals")
 
-filas = [
-    ("Counties", str(resumen["n_condados"])),
-    ("County-hour rows", f"{resumen['n_filas']:,}"),
-    ("Hours per county", str(resumen["n_horas"])),
-    ("States covered", ", ".join(resumen["estados"]) if resumen["estados"] else "n/a"),
-    ("County geometry", "resolved" if resumen["tiene_coordenadas"] else "derived from FIPS"),
-]
+# Solo lo que la franja de metadatos de arriba no dice ya: la franja trae
+# condados, filas, horas y estados; el advisory trae el pico y su donde.
 if tiene_osi:
-    filas.insert(0, ("Peak OSI", f"{pico_global:.4f}"))
-    filas.insert(1, ("Peak location", f"{condado_pico}, {estado_pico}".strip(", ")))
-    filas.insert(2, ("Peak hour index", str(hora_pico)))
+    filas = [
+        ("Peak OSI", f"{pico_global:.4f}"),
+        ("Peak location", f"{condado_pico}{(', ' + estado_pico) if estado_pico else ''}"),
+        ("Peak hour index", str(hora_pico)),
+        ("County geometry", "resolved" if resumen["tiene_coordenadas"] else "derived from FIPS"),
+    ]
+else:
+    filas = [
+        ("Severity fields", "absent from this file"),
+        ("County geometry", "resolved" if resumen["tiene_coordenadas"] else "derived from FIPS"),
+    ]
 
-comp.tarjeta_datos("Record vitals", filas)
+comp.tarjeta_datos("Event vitals", filas)
 
 if tiene_osi and reparto:
     comp.entradilla(
@@ -174,13 +176,23 @@ if tiene_osi and reparto:
         "which is why the counts below sum to the full county set rather than describing a "
         "single instant."
     )
-    comp.fila_metricas([
-        (f"{theme.datos_nivel(c)['numero']} {theme.datos_nivel(c)['abrev']}",
-         str(reparto[c]),
-         f"OSI {theme.rango_nivel(c)}",
-         "ink")
+    # Esto es contenido tabular (categoria / condados / umbral), asi que se
+    # presenta como tabla y no como una fila de tarjetas de metrica: la
+    # regla de la maqueta es tabla para lo tabular, prosa para lo demas, y
+    # caja solo para lo que interrumpe.
+    filas_tabla = "".join(
+        f"<tr><td>{theme.datos_nivel(c)['numero']} {theme.datos_nivel(c)['abrev']}</td>"
+        f"<td class='txt'>{theme.datos_nivel(c)['nombre']}</td>"
+        f"<td>{reparto[c]}</td>"
+        f"<td>{theme.rango_nivel(c)}</td></tr>"
         for c in reparto
-    ])
+    )
+    st.markdown(f"""
+<table class="plaintab">
+  <thead><tr><th>Category</th><th>Name</th><th>Counties</th><th>OSI range</th></tr></thead>
+  <tbody>{filas_tabla}</tbody>
+</table>
+""", unsafe_allow_html=True)
     comp.nota_fuente(
         "<b>Source:</b> county-level maxima over the loaded window. "
         "<b>Category thresholds:</b> fixed on the OSI scale, documented in "

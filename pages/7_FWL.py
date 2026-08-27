@@ -21,7 +21,7 @@ df = comp.preparar_hoja(dict(page_title="Frisch-Waugh-Lovell | OSI Analysis Desk
 comp.encabezado_pagina(
     "Frisch-Waugh-Lovell",
     "A raw correlation between a weather field and severity can conceal an effect or invent one. "
-    "The Frisch-Waugh-Lovell theorem recovers a predictor's own contribution by residualising it "
+    "The Frisch-Waugh-Lovell theorem recovers a predictor's own contribution by residualizing it "
     "against the remaining controls first. Predictors whose sign flips under this treatment are "
     "the ones a naive importance ranking would have got backwards.",
 )
@@ -29,7 +29,7 @@ comp.banner_datos_simulados()
 
 st.markdown("""
 <div class="finding tone-ink">
-  <div class="flabel">What this means before the math</div>
+  <div class="flabel">Why snow can look like a driver when the driver is gust</div>
   <p>
   Two things can move together without either one causing the other. Snow and gust often show up
   in the same winter storms: look at snow alone and it can look like a big driver of outages,
@@ -108,14 +108,6 @@ st.write("")
 tono_hallazgo = "warn" if resultado["cambia_signo"] else "accent"
 cambio_pct = 100 * (resultado["coef_ingenuo"] - resultado["coef_parcial"]) / (abs(resultado["coef_ingenuo"]) + 1e-9)
 if resultado["cambia_signo"]:
-    nivel_fwl = "severe"
-elif abs(cambio_pct) >= 50:
-    nivel_fwl = "warning"
-elif abs(cambio_pct) >= 20:
-    nivel_fwl = "watch"
-else:
-    nivel_fwl = "calm"
-if resultado["cambia_signo"]:
     texto = (
         f"The coefficient of <b>{variable_interes}</b> on OSI <b>flips sign</b> when controlling "
         f"for {', '.join(controles) if controles else 'the other variables'}: "
@@ -125,21 +117,35 @@ if resultado["cambia_signo"]:
         "exactly what the theorem is built to catch."
     )
 else:
+    # La frase de cierre tiene que decir lo mismo que el titulo: con un
+    # cambio chico, afirmar que "gran parte la explicaban los controles"
+    # contradice al numero de la misma frase.
+    if abs(cambio_pct) >= 20:
+        cierre = (f"That's a <b>{abs(cambio_pct):.0f}%</b> change in the size of the effect: a "
+                  "large part of what this variable seemed to explain is actually explained by "
+                  "the others, which move at the same time.")
+    else:
+        cierre = (f"That's a <b>{abs(cambio_pct):.0f}%</b> change in the size of the effect: "
+                  "most of what this variable explains survives the controls, which is what an "
+                  "independent driver looks like under this test.")
     texto = (
         f"The coefficient of <b>{variable_interes}</b> on OSI goes from "
         f"<b>{resultado['coef_ingenuo']:.5f}</b> (naive, controlling for nothing) to "
         f"<b>{resultado['coef_parcial']:.5f}</b> (partial, controlling for "
-        f"{', '.join(controles) if controles else 'nothing'}). "
-        f"That's a <b>{abs(cambio_pct):.0f}%</b> change in the size of the effect: a large part "
-        "of what this variable seemed to explain is actually explained by the others, which move "
-        "at the same time."
+        f"{', '.join(controles) if controles else 'nothing'}). " + cierre
     )
-comp.hallazgo(f"What the theorem found for this combination {comp.insignia_severidad(nivel_fwl)}",
-             texto, tono=tono_hallazgo)
+if resultado["cambia_signo"]:
+    titulo_fwl = f"The sign of {variable_interes} flips once the controls come in"
+elif abs(cambio_pct) >= 20:
+    titulo_fwl = f"Controls absorb {abs(cambio_pct):.0f}% of what {variable_interes} seemed to explain"
+else:
+    titulo_fwl = f"{variable_interes} keeps most of its effect after controls"
+comp.hallazgo(titulo_fwl, texto, tono=tono_hallazgo,
+             destacado=resultado["cambia_signo"])
 
 if resultado["cambia_signo"]:
     comp.hallazgo(
-        "Business read",
+        f"A policy built on the raw {variable_interes} correlation targets the wrong lever",
         f"A policy built on the raw correlation of {variable_interes} with outages would target "
         "the wrong lever: it would look protective or harmful in exactly the wrong direction, "
         "because it was never isolating this variable's own effect to begin with.",
@@ -187,7 +193,7 @@ with col_der:
     fig_parcial.update_xaxes(title_text=f"residual of {variable_interes}")
     fig_parcial.update_yaxes(title_text="residual of osi")
     fig_parcial.update_layout(showlegend=False)
-    comp.figura(fig_parcial, "2", "Partial relationship, controls residualised out",
+    comp.figura(fig_parcial, "2", "Partial relationship, controls residualized out",
                 fuente="<b>Method:</b> both severity and the predictor are regressed on the "
                        "control set; the residuals are then regressed against each other. The "
                        "slope shown is the partial coefficient.")

@@ -143,7 +143,7 @@ no external account, same as the rest of the dashboard.
 Four reference sites were studied and mixed; none was cloned. What each
 one contributed:
 
-- **spc.noaa.gov** — the categorical scale. `theme.NIVELES` defines five
+- **spc.noaa.gov**: the categorical scale. `theme.NIVELES` defines five
   numbered severity categories (`1 MNML` ... `5 EXTR`) with the SPC's own
   pastel fills and dark text, and `components.cinta_riesgo()` always
   renders the whole scale with the OSI threshold printed under each step
@@ -152,7 +152,7 @@ one contributed:
   coloured pill. `theme.nivel_para_osi()` is the only place that maps a
   number to a category, so the ribbon, the badges and the map legend
   cannot disagree.
-- **nhc.noaa.gov** — the advisory format. `components.titular()` renders
+- **nhc.noaa.gov**: the advisory format. `components.titular()` renders
   the all-capitals headline wrapped in ellipses
   (`...PEAK OUTAGE SEVERITY 0.412 AT HOUR 84...`), which is the
   signature of an NWS text product; `components.tarjeta_datos()` is the
@@ -160,12 +160,12 @@ one contributed:
   leader lines between label and value, and an issuance footer; and
   `components.lista_estado()` is the bulleted "what is in effect right
   now" list from the NHC front page, used instead of a paragraph.
-- **weather.gov** — the site structure. A three-band header (utility
+- **weather.gov**: the site structure. A three-band header (utility
   strip, unit masthead with issuance stamp, grouped section index), a
   breadcrumb trail on every page, and the section index repeated in the
   left rail. The eleven pages are grouped into five named sections in
   `components.PAGINAS` instead of sitting flat in one row of tabs.
-- **iii.org** — the spacing and the tone. One bounded reading column, a
+- **iii.org**: the spacing and the tone. One bounded reading column, a
   standfirst paragraph that explains and attributes the figure *before*
   it is drawn (`components.entradilla()`), numbered figures with a source
   line underneath (`components.figura()`), and a "related products" block
@@ -198,6 +198,18 @@ All vertical spacing derives from two CSS variables (`--bloque: 24px`,
 block carried its own invented margin, which is why the page almost
 lined up without ever quite doing so.
 
+## House constraints
+
+Carried over from this project's history; a test pins most of them:
+
+- No Mapbox or any service needing an API token or account. Everything
+  runs offline after `pip install`.
+- Real challenge data is never committed or persisted. The only CSV in
+  the repo is the generated sample; uploads live in session state only.
+- No government seal, logo, wordmark or `.gov` branding element. Layout,
+  color and typography language only, with an explicit disclaimer.
+- No em or en dashes in prose, and no emojis, in code or docs.
+
 ## Tests
 
 ```
@@ -206,9 +218,9 @@ pytest tests/ -v
 ```
 
 `tests/test_paginas.py` runs every page through
-`streamlit.testing.v1.AppTest` twice — once on the simulated sample and
-once with a file injected into session state as if it had been uploaded —
-and asserts no exception either way. On top of that it pins the things
+`streamlit.testing.v1.AppTest` twice: once on the simulated sample, and
+once with a file injected into session state as if it had been uploaded.
+It asserts no exception either way. On top of that it pins the things
 that are easy to lose in a later edit: that every page carries the
 three-band header, the breadcrumb, the metadata strip, the issuance stamp
 and the institutional footer; that the severity scale covers the real
