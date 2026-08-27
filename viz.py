@@ -351,7 +351,7 @@ def figura_mapa_geografico(df: pd.DataFrame, geo, variable: str = "osi",
     v0 = vals_de(hora_fija if hora_fija is not None else horas[0])
     titulo = (f"{etiqueta}, hour {int(hora_fija)}" if hora_fija is not None
              else f"{etiqueta} over the real county map")
-    fig = go.Figure(go.Choroplethmapbox(
+    fig = go.Figure(go.Choroplethmap(
         geojson=geojson, locations=[str(f) for f in fips_validos], z=v0,
         zmin=0, zmax=vmax, colorscale=theme.ESCALA_TORMENTA, marker_line_width=0.6,
         marker_line_color="rgba(255,255,255,0.6)", colorbar=dict(title=etiqueta, thickness=14),
@@ -359,7 +359,7 @@ def figura_mapa_geografico(df: pd.DataFrame, geo, variable: str = "osi",
         hoverinfo="text",
     ))
     fig.update_layout(
-        mapbox=dict(style="carto-positron", center=dict(lat=centro_lat, lon=centro_lon), zoom=5.6),
+        map=dict(style="carto-positron", center=dict(lat=centro_lat, lon=centro_lon), zoom=5.6),
         paper_bgcolor=p["panel"], font=dict(family=theme.FONT_BODY, color=p["ink"], size=13),
         height=680, margin=dict(l=0, r=0, t=64, b=10),
         title=dict(text=titulo, font=dict(family=theme.FONT_DISPLAY, size=28, color=p["ink"]),
@@ -373,7 +373,7 @@ def figura_mapa_geografico(df: pd.DataFrame, geo, variable: str = "osi",
 
         fig.frames = [
             go.Frame(name=str(int(h)),
-                     data=[go.Choroplethmapbox(z=(vals := vals_de(h)), hovertext=hover_de(h, vals))])
+                     data=[go.Choroplethmap(z=(vals := vals_de(h)), hovertext=hover_de(h, vals))])
             for h in horas
         ]
         pasos = [dict(method="animate", label=f"{int(h)}",
